@@ -9,6 +9,13 @@ fn get_content_length(response_str: &str) -> usize {
     content_length.to_owned()
 }
 
+fn get_request_body(response_str: &str) -> String {
+    let content_length = get_content_length(response_str);
+    let k = response_str.find("\r\n\r\n").unwrap();
+    // add 4 bytes to skip "\r\n\r\n"
+    response_str[k + 4..k + 4 + content_length].to_owned()
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let host = "jsonplaceholder.typicode.com";
     let port = 443; // HTTPS default port
@@ -32,11 +39,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut response_buffer = Vec::new();
     stream.read_to_end(&mut response_buffer)?;
 
-    let response_str = String::from_utf8_lossy(&response_buffer);
-    let content_length = get_content_length(&response_str);
-    let k = response_str.find("\r\n\r\n").unwrap();
-    // add 4 bytes to skip "\r\n\r\n"
-    println!("{}", &response_str[k + 4..k + 4 + content_length]);
+    let response_str = String::from_utf8(response_buffer)?;
+    let request_body = get_request_body(&response_str);
+
+    println!("{}", request_body);
 
     Ok(())
 }
