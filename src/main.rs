@@ -26,7 +26,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     stream.read_to_end(&mut response_buffer)?;
 
     let response_str = String::from_utf8_lossy(&response_buffer);
-    println!("{}", response_str);
+    let i = response_str.find("Content-Length:").unwrap();
+    let j = &response_str[i + 16..].find("\r\n").unwrap();
+    let content_length = &response_str[i + 16..i + 16 + j].parse::<usize>().unwrap();
+    let k = response_str.find("\r\n\r\n").unwrap();
+    // add 4 bytes to skip "\r\n\r\n"
+    println!("{}", &response_str[k + 4..k + 4 + content_length]);
 
     Ok(())
 }
