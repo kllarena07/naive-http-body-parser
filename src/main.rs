@@ -32,12 +32,13 @@ fn parse_json(json_str: &str) -> Result<HashMap<String, String>, Box<dyn std::er
         let parts: Vec<&str> = pair.split(": ").collect();
         if parts.len() == 2 {
             map.insert(parts[0].trim().to_string(), parts[1].trim().to_string());
-        } else {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Invalid JSON format",
-            )) as Box<dyn std::error::Error>);
+            continue;
         }
+
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Invalid JSON format",
+        )) as Box<dyn std::error::Error>);
     }
 
     Ok(map)
