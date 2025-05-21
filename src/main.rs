@@ -1,4 +1,5 @@
 use native_tls::TlsConnector;
+use std::collections::HashMap;
 use std::io::prelude::*;
 use std::net::TcpStream;
 
@@ -14,6 +15,32 @@ fn get_request_body(response_str: &str) -> String {
     let k = response_str.find("\r\n\r\n").unwrap();
     // add 4 bytes to skip "\r\n\r\n"
     response_str[k + 4..k + 4 + content_length].to_owned()
+}
+
+fn parse_json(json_str: &str) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    // Isolate the keys and values
+    let trimmed = &json_str[1..json_str.len() - 1];
+    let replaced = trimmed
+        .replace("\n", "")
+        .replace("\r", "")
+        .replace("\"", "");
+    let split: Vec<&str> = replaced.split(",").collect();
+
+    // Extract keys and values and add to hashmap
+    let mut map = HashMap::new();
+    for pair in split {
+        let parts: Vec<&str> = pair.split(": ").collect();
+        if parts.len() == 2 {
+            map.insert(parts[0].trim().to_string(), parts[1].trim().to_string());
+        } else {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Invalid JSON format",
+            )) as Box<dyn std::error::Error>);
+        }
+    }
+
+    Ok(map)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,7 +69,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response_str = String::from_utf8(response_buffer)?;
     let request_body = get_request_body(&response_str);
 
-    println!("{}", request_body);
+    let json = parse_json(&request_body).ok();
+    println!("{:?}", json);
 
     Ok(())
 }
